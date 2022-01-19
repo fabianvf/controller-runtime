@@ -26,7 +26,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1228,6 +1227,7 @@ func CacheTest(createCacheFunc func(config *rest.Config, opts cache.Options) (ca
 							},
 						},
 					}
+					g
 					sii, err := informerCache.GetInformer(informerCacheCtx, pod)
 					Expect(err).To(HaveOccurred())
 					Expect(sii).To(BeNil())

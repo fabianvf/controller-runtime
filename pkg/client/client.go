@@ -60,6 +60,8 @@ type Options struct {
 	// Opts is used to configure the warning handler responsible for
 	// surfacing and handling warnings messages sent by the API server.
 	Opts WarningHandlerOptions
+
+	Scope rest.Scope
 }
 
 // New returns a new Client using the provided config and Options.
