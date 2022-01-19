@@ -54,7 +54,7 @@ type CacheReader struct {
 }
 
 // Get checks the indexer for the object and writes a copy of it if found.
-func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Object) error {
+func (c *CacheReader) Get(ctx context.Context, key client.ObjectKey, out client.Object) error {
 	if c.scopeName == apimeta.RESTScopeNameRoot {
 		key.Namespace = ""
 	}
@@ -180,10 +180,10 @@ func (c *CacheReader) List(_ context.Context, out client.ObjectList, opts ...cli
 // String to allow keeping the key format easily in sync with
 // MetaNamespaceKeyFunc.
 func objectKeyToStoreKey(k client.ObjectKey) string {
-	if k.Namespace == "" {
+	if k.Namespace == "" && k.Cluster.String() == "" {
 		return k.Name
 	}
-	return k.Namespace + "/" + k.Name
+	return k.Cluster.String() + "/" + k.Namespace + "/" + k.Name
 }
 
 // requiresExactMatch checks if the given field selector is of the form `k=v` or `k==v`.

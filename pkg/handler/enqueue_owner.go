@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -134,9 +135,9 @@ func (e *EnqueueRequestForOwner) getOwnerReconcileRequest(object metav1.Object, 
 		// object in the event.
 		if ref.Kind == e.groupKind.Kind && refGV.Group == e.groupKind.Group {
 			// Match found - add a Request for the object referred to in the OwnerReference
-			request := reconcile.Request{NamespacedName: types.NamespacedName{
+			request := reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
 				Name: ref.Name,
-			}}
+			}}}
 
 			// if owner is not namespaced then we should set the namespace to the empty
 			mapping, err := e.mapper.RESTMapping(e.groupKind, refGV.Version)

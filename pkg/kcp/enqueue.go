@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package handler
+package kcp
 
 import (
+	"github.com/kcp-dev/logicalcluster"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,11 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var enqueueLog = logf.RuntimeLog.WithName("eventhandler").WithName("EnqueueRequestForObject")
+var enqueueLog = logf.RuntimeLog.WithName("eventhandler").WithName("EnqueueRequestForKCPObject")
 
 type empty struct{}
-
-var _ EventHandler = &EnqueueRequestForObject{}
 
 // EnqueueRequestForObject enqueues a Request containing the Name and Namespace of the object that is the source of the Event.
 // (e.g. the created / deleted / updated objects Name and Namespace).  handler.EnqueueRequestForObject is used by almost all
@@ -42,25 +41,16 @@ func (e *EnqueueRequestForObject) Create(evt event.CreateEvent, q workqueue.Rate
 		enqueueLog.Error(nil, "CreateEvent received with no metadata", "event", evt)
 		return
 	}
-	q.Add(reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
-		Name:      evt.Object.GetName(),
-		Namespace: evt.Object.GetNamespace(),
-	}}})
+	q.Add(request(evt.Object))
 }
 
 // Update implements EventHandler.
 func (e *EnqueueRequestForObject) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	switch {
 	case evt.ObjectNew != nil:
-		q.Add(reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
-			Name:      evt.ObjectNew.GetName(),
-			Namespace: evt.ObjectNew.GetNamespace(),
-		}}})
+		q.Add(request(evt.ObjectNew))
 	case evt.ObjectOld != nil:
-		q.Add(reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
-			Name:      evt.ObjectOld.GetName(),
-			Namespace: evt.ObjectOld.GetNamespace(),
-		}}})
+		q.Add(request(evt.ObjectOld))
 	default:
 		enqueueLog.Error(nil, "UpdateEvent received with no metadata", "event", evt)
 	}
@@ -72,10 +62,7 @@ func (e *EnqueueRequestForObject) Delete(evt event.DeleteEvent, q workqueue.Rate
 		enqueueLog.Error(nil, "DeleteEvent received with no metadata", "event", evt)
 		return
 	}
-	q.Add(reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
-		Name:      evt.Object.GetName(),
-		Namespace: evt.Object.GetNamespace(),
-	}}})
+	q.Add(request(evt.Object))
 }
 
 // Generic implements EventHandler.
@@ -84,8 +71,15 @@ func (e *EnqueueRequestForObject) Generic(evt event.GenericEvent, q workqueue.Ra
 		enqueueLog.Error(nil, "GenericEvent received with no metadata", "event", evt)
 		return
 	}
-	q.Add(reconcile.Request{ObjectKey: client.ObjectKey{NamespacedName: types.NamespacedName{
-		Name:      evt.Object.GetName(),
-		Namespace: evt.Object.GetNamespace(),
-	}}})
+	q.Add(request(evt.Object))
+}
+
+func request(obj client.Object) reconcile.Request {
+	return reconcile.Request{client.ObjectKey{
+		NamespacedName: types.NamespacedName{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+		},
+		Cluster: logicalcluster.From(obj),
+	}}
 }
