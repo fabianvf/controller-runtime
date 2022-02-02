@@ -1227,7 +1227,6 @@ func CacheTest(createCacheFunc func(config *rest.Config, opts cache.Options) (ca
 							},
 						},
 					}
-					g
 					sii, err := informerCache.GetInformer(informerCacheCtx, pod)
 					Expect(err).To(HaveOccurred())
 					Expect(sii).To(BeNil())
