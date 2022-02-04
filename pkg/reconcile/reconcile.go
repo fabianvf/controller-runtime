@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 )
 
 // Result contains the result of a Reconciler invocation.
@@ -47,6 +48,7 @@ func (r *Result) IsZero() bool {
 type Request struct {
 	// NamespacedName is the name and namespace of the object to reconcile.
 	types.NamespacedName
+	rest.Scope
 }
 
 /*

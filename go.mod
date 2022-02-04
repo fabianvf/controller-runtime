@@ -65,18 +65,18 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
 
-replace k8s.io/api => github.com/ncdc/kubernetes/staging/src/k8s.io/api v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/api => github.com/ncdc/kubernetes/staging/src/k8s.io/api v0.0.0-20220128213621-87c1d7bc3752
 
-replace k8s.io/apiextensions-apiserver => github.com/ncdc/kubernetes/staging/src/k8s.io/apiextensions-apiserver v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/apiextensions-apiserver => github.com/ncdc/kubernetes/staging/src/k8s.io/apiextensions-apiserver v0.0.0-20220128213621-87c1d7bc3752
 
-replace k8s.io/apimachinery => github.com/ncdc/kubernetes/staging/src/k8s.io/apimachinery v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/apimachinery => github.com/ncdc/kubernetes/staging/src/k8s.io/apimachinery v0.0.0-20220128213621-87c1d7bc3752
 
-replace k8s.io/client-go => github.com/ncdc/kubernetes/staging/src/k8s.io/client-go v0.0.0-20220119183702-4619e1d3975e
-
-replace k8s.io/component-base => github.com/ncdc/kubernetes/staging/src/k8s.io/component-base v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/component-base => github.com/ncdc/kubernetes/staging/src/k8s.io/component-base v0.0.0-20220128213621-87c1d7bc3752
 
 //replace k8s.io/utils => github.com/ncdc/kubernetes/staging/src/k8s.io/utils v0.0.0-20220119183702-4619e1d3975e
 
-replace k8s.io/apiserver => github.com/ncdc/kubernetes/staging/src/k8s.io/apiserver v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/apiserver => github.com/ncdc/kubernetes/staging/src/k8s.io/apiserver v0.0.0-20220128213621-87c1d7bc3752
 
-replace k8s.io/code-generator => github.com/ncdc/kubernetes/staging/src/k8s.io/code-generator v0.0.0-20220119183702-4619e1d3975e
+replace k8s.io/code-generator => github.com/ncdc/kubernetes/staging/src/k8s.io/code-generator v0.0.0-20220128213621-87c1d7bc3752
+
+replace k8s.io/client-go => github.com/ncdc/kubernetes/staging/src/k8s.io/client-go v0.0.0-20220128213621-87c1d7bc3752
