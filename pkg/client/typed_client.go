@@ -43,6 +43,7 @@ func (c *typedClient) Create(ctx context.Context, obj Object, opts ...CreateOpti
 	createOpts := &CreateOptions{}
 	createOpts.ApplyOptions(opts)
 	return o.Post().
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Body(obj).
