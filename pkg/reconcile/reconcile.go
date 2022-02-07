@@ -44,10 +44,11 @@ func (r *Result) IsZero() bool {
 // Request contains the information necessary to reconcile a Kubernetes object.  This includes the
 // information to uniquely identify the object - its Name and Namespace.  It does NOT contain information about
 // any specific Event or the object contents itself.
+// TODO: add a cluster name to key
 type Request struct {
 	// NamespacedName is the name and namespace of the object to reconcile.
 	types.NamespacedName
-	// rest.Scope
+	ClusterName string
 }
 
 /*
