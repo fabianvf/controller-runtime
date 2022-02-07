@@ -62,6 +62,7 @@ func (c *typedClient) Update(ctx context.Context, obj Object, opts ...UpdateOpti
 	updateOpts := &UpdateOptions{}
 	updateOpts.ApplyOptions(opts)
 	return o.Put().
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -82,6 +83,7 @@ func (c *typedClient) Delete(ctx context.Context, obj Object, opts ...DeleteOpti
 	deleteOpts.ApplyOptions(opts)
 
 	return o.Delete().
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -101,6 +103,7 @@ func (c *typedClient) DeleteAllOf(ctx context.Context, obj Object, opts ...Delet
 	deleteAllOfOpts.ApplyOptions(opts)
 
 	return o.Delete().
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(deleteAllOfOpts.ListOptions.Namespace, o.isNamespaced()).
 		Resource(o.resource()).
 		VersionedParams(deleteAllOfOpts.AsListOptions(), c.paramCodec).
@@ -123,6 +126,7 @@ func (c *typedClient) Patch(ctx context.Context, obj Object, patch Patch, opts .
 
 	patchOpts := &PatchOptions{}
 	return o.Patch(patch.Type()).
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -139,6 +143,7 @@ func (c *typedClient) Get(ctx context.Context, key ObjectKey, obj Object) error 
 		return err
 	}
 	return r.Get().
+		Cluster(obj.GetClusterName()).
 		NamespaceIfScoped(key.Namespace, r.isNamespaced()).
 		Resource(r.resource()).
 		Name(key.Name).Do(ctx).Into(obj)
