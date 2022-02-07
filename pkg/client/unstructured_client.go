@@ -53,6 +53,7 @@ func (uc *unstructuredClient) Create(ctx context.Context, obj Object, opts ...Cr
 	createOpts := &CreateOptions{}
 	createOpts.ApplyOptions(opts)
 	result := o.Post().
+		Cluster(o.GetClusterName()).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Body(obj).

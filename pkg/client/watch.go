@@ -35,19 +35,12 @@ func NewWithWatch(config *rest.Config, options Options) (WithWatch, error) {
 	}
 
 	var dynamicClient dynamic.Interface
-	if options.Scope != nil {
-		dynamicClientScoping, err := dynamic.NewScopingForConfig(config)
-		if err != nil {
-			return nil, err
-		}
 
-		dynamicClient = dynamicClientScoping.Scope(options.Scope)
-	} else {
-		dynamicClient, err = dynamic.NewForConfig(config)
-		if err != nil {
-			return nil, err
-		}
+	dynamicClient, err = dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
 	}
+
 	return &watchingClient{client: client, dynamic: dynamicClient}, nil
 }
 

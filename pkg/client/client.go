@@ -61,7 +61,8 @@ type Options struct {
 	// surfacing and handling warnings messages sent by the API server.
 	Opts WarningHandlerOptions
 
-	Scope rest.Scope
+	// Cluster refers to the name of the cluster this request is scoped to
+	Cluster string
 }
 
 // New returns a new Client using the provided config and Options.
