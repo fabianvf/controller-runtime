@@ -59,6 +59,7 @@ type Builder struct {
 	ctrl             controller.Controller
 	ctrlOptions      controller.Options
 	name             string
+	cluster          string
 }
 
 // ControllerManagedBy returns a new controller builder that will be started by the provided Manager.
@@ -130,6 +131,11 @@ func (blder *Builder) Watches(src source.Source, eventhandler handler.EventHandl
 	}
 
 	blder.watchesInput = append(blder.watchesInput, input)
+	return blder
+}
+
+func (blder *Builder) Cluster(c string) *Builder {
+	blder.cluster = c
 	return blder
 }
 
@@ -222,7 +228,7 @@ func (blder *Builder) doWatch() error {
 	if err != nil {
 		return err
 	}
-	src := &source.Kind{Type: typeForSrc}
+	src := &source.Kind{Type: typeForSrc, ClusterName: blder.cluster}
 	hdler := &handler.EnqueueRequestForObject{}
 	allPredicates := append(blder.globalPredicates, blder.forInput.predicates...)
 	if err := blder.ctrl.Watch(src, hdler, allPredicates...); err != nil {
@@ -235,7 +241,7 @@ func (blder *Builder) doWatch() error {
 		if err != nil {
 			return err
 		}
-		src := &source.Kind{Type: typeForSrc}
+		src := &source.Kind{Type: typeForSrc, ClusterName: blder.cluster}
 		hdler := &handler.EnqueueRequestForOwner{
 			OwnerType:    blder.forInput.object,
 			IsController: true,

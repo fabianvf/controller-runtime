@@ -94,6 +94,8 @@ type Kind struct {
 	// cache used to watch APIs
 	cache cache.Cache
 
+	ClusterName string
+
 	// started may contain an error if one was encountered during startup. If its closed and does not
 	// contain an error, startup and syncing finished.
 	started     chan error
