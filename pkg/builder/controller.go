@@ -223,6 +223,7 @@ func (blder *Builder) project(obj client.Object, proj objectProjection) (client.
 }
 
 func (blder *Builder) doWatch() error {
+	fmt.Println("watching resource")
 	// Reconcile type
 	typeForSrc, err := blder.project(blder.forInput.object, blder.forInput.objectProjection)
 	if err != nil {

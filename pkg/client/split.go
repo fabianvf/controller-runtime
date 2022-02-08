@@ -18,6 +18,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -109,6 +110,7 @@ func (d *delegatingReader) shouldBypassCache(obj runtime.Object) (bool, error) {
 	if meta.IsListType(obj) {
 		gvk.Kind = strings.TrimSuffix(gvk.Kind, "List")
 	}
+
 	if _, isUncached := d.uncachedGVKs[gvk]; isUncached {
 		return true, nil
 	}
@@ -122,12 +124,24 @@ func (d *delegatingReader) shouldBypassCache(obj runtime.Object) (bool, error) {
 
 // Get retrieves an obj for a given object key from the Kubernetes Cluster.
 func (d *delegatingReader) Get(ctx context.Context, key ObjectKey, obj Object) error {
+	fmt.Println("calling get from delegating client#####")
+	b, err := d.shouldBypassCache(obj)
+	if err != nil {
+		return err
+	}
+	fmt.Println("chouldByPassCache: ", b)
 	if isUncached, err := d.shouldBypassCache(obj); err != nil {
 		return err
 	} else if isUncached {
 		return d.ClientReader.Get(ctx, key, obj)
 	}
-	return d.CacheReader.Get(ctx, key, obj)
+	fmt.Println("getting to cache reader")
+	err = d.CacheReader.Get(ctx, key, obj)
+	if err != nil {
+		fmt.Println("error here@@@@", obj.GetClusterName())
+		return err
+	}
+	return nil
 }
 
 // List retrieves list of objects for a given namespace and list options.

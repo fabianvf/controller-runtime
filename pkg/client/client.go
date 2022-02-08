@@ -245,6 +245,7 @@ func (c *client) Patch(ctx context.Context, obj Object, patch Patch, opts ...Pat
 
 // Get implements client.Client.
 func (c *client) Get(ctx context.Context, key ObjectKey, obj Object) error {
+	fmt.Println("********client ***********")
 	switch obj.(type) {
 	case *unstructured.Unstructured:
 		return c.unstructuredClient.Get(ctx, key, obj)

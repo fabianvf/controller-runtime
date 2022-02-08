@@ -56,7 +56,7 @@ type Informers interface {
 
 	// GetInformerForKind is similar to GetInformer, except that it takes a group-version-kind, instead
 	// of the underlying object.
-	GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error)
+	GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (Informer, error)
 
 	// Start runs all the informers known to this cache until the context is closed.
 	// It blocks.
@@ -112,6 +112,9 @@ type Options struct {
 	// Default watches all namespaces
 	Namespace string
 
+	// ClusterName restricts cache's ListeWatch to the desired clusterscope
+	ClusterName string
+
 	// SelectorsByObject restricts the cache's ListWatch to the desired
 	// fields per GVK at the specified object, the map's value must implement
 	// Selector [1] using for example a Set [2]
@@ -146,7 +149,7 @@ func New(config *rest.Config, opts Options) (Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, selectorsByGVK, disableDeepCopyByGVK)
+	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, opts.ClusterName, selectorsByGVK, disableDeepCopyByGVK)
 	return &informerCache{InformersMap: im}, nil
 }
 

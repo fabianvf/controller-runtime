@@ -146,6 +146,7 @@ func (c *Controller) Watch(src source.Source, evthdler handler.EventHandler, prc
 
 // Start implements controller.Controller.
 func (c *Controller) Start(ctx context.Context) error {
+	c.Log.Info("starting controller here")
 	// use an IIFE to get proper lock handling
 	// but lock outside to get proper handling of the queue shutdown
 	c.mu.Lock()
@@ -264,6 +265,8 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 	defer ctrlmetrics.ActiveWorkers.WithLabelValues(c.Name).Add(-1)
 
 	c.reconcileHandler(ctx, obj)
+	fmt.Println("**********")
+	fmt.Println(obj)
 	return true
 }
 

@@ -44,6 +44,9 @@ type CacheReader struct {
 	// groupVersionKind is the group-version-kind of the resource.
 	groupVersionKind schema.GroupVersionKind
 
+	// clusterName is the clusterName of the resource
+	clusterName string
+
 	// scopeName is the scope of the resource (namespaced or cluster-scoped).
 	scopeName apimeta.RESTScopeName
 
@@ -58,7 +61,8 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 	if c.scopeName == apimeta.RESTScopeNameRoot {
 		key.Namespace = ""
 	}
-	storeKey := objectKeyToStoreKey(key)
+	storeKey := objectKeyToStoreKey(key, out.GetClusterName())
+	fmt.Println("storeKey", storeKey)
 
 	// Lookup the object from the indexer cache
 	obj, exists, err := c.indexer.GetByKey(storeKey)
@@ -68,6 +72,7 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 
 	// Not found, return an error
 	if !exists {
+		fmt.Println("not found error here")
 		// Resource gets transformed into Kind in the error anyway, so this is fine
 		return apierrors.NewNotFound(schema.GroupResource{
 			Group:    c.groupVersionKind.Group,
@@ -179,11 +184,11 @@ func (c *CacheReader) List(_ context.Context, out client.ObjectList, opts ...cli
 // It's akin to MetaNamespaceKeyFunc.  It's separate from
 // String to allow keeping the key format easily in sync with
 // MetaNamespaceKeyFunc.
-func objectKeyToStoreKey(k client.ObjectKey) string {
+func objectKeyToStoreKey(k client.ObjectKey, clusterName string) string {
 	if k.Namespace == "" {
-		return k.Name
+		return k.Name + clusterName
 	}
-	return k.Namespace + "/" + k.Name
+	return k.Namespace + "/" + k.Name + "/" + clusterName
 }
 
 // requiresExactMatch checks if the given field selector is of the form `k=v` or `k==v`.

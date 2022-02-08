@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,12 +53,13 @@ type informerCache struct {
 
 // Get implements Reader.
 func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out client.Object) error {
+	fmt.Println("calling Get from cacheReader")
 	gvk, err := apiutil.GVKForObject(out, ip.Scheme)
 	if err != nil {
 		return err
 	}
 
-	started, cache, err := ip.InformersMap.Get(ctx, gvk, out)
+	started, cache, err := ip.InformersMap.Get(ctx, gvk, out, out.GetClusterName())
 	if err != nil {
 		return err
 	}
@@ -74,8 +76,11 @@ func (ip *informerCache) List(ctx context.Context, out client.ObjectList, opts .
 	if err != nil {
 		return err
 	}
-
-	started, cache, err := ip.InformersMap.Get(ctx, *gvk, cacheTypeObj)
+	metadata, err := meta.Accessor(cacheTypeObj)
+	if err != nil {
+		return err
+	}
+	started, cache, err := ip.InformersMap.Get(ctx, *gvk, cacheTypeObj, metadata.GetClusterName())
 	if err != nil {
 		return err
 	}
@@ -130,14 +135,14 @@ func (ip *informerCache) objectTypeForListObject(list client.ObjectList) (*schem
 }
 
 // GetInformerForKind returns the informer for the GroupVersionKind.
-func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error) {
+func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (Informer, error) {
 	// Map the gvk to an object
 	obj, err := ip.Scheme.New(gvk)
 	if err != nil {
 		return nil, err
 	}
 
-	_, i, err := ip.InformersMap.Get(ctx, gvk, obj)
+	_, i, err := ip.InformersMap.Get(ctx, gvk, obj, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +156,8 @@ func (ip *informerCache) GetInformer(ctx context.Context, obj client.Object) (In
 		return nil, err
 	}
 
-	_, i, err := ip.InformersMap.Get(ctx, gvk, obj)
+	fmt.Println("getting informer from indexer")
+	_, i, err := ip.InformersMap.Get(ctx, gvk, obj, obj.GetClusterName())
 	if err != nil {
 		return nil, err
 	}
