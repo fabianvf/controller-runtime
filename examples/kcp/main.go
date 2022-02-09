@@ -25,6 +25,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -57,7 +58,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 func main() {
 	ctrl.SetLogger(zap.New())
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
+	cfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		NewCache: cache.MultiClusterCacheBuilder([]string{"*"}),
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

@@ -229,7 +229,11 @@ func (blder *Builder) doWatch() error {
 	if err != nil {
 		return err
 	}
-	src := &source.Kind{Type: typeForSrc, ClusterName: blder.cluster}
+
+	// watch the cluster which is being passed to the controller - initial watch
+	typeForSrc.SetClusterName(blder.cluster)
+
+	src := &source.Kind{Type: typeForSrc}
 	hdler := &handler.EnqueueRequestForObject{}
 	allPredicates := append(blder.globalPredicates, blder.forInput.predicates...)
 	if err := blder.ctrl.Watch(src, hdler, allPredicates...); err != nil {
@@ -242,7 +246,7 @@ func (blder *Builder) doWatch() error {
 		if err != nil {
 			return err
 		}
-		src := &source.Kind{Type: typeForSrc, ClusterName: blder.cluster}
+		src := &source.Kind{Type: typeForSrc}
 		hdler := &handler.EnqueueRequestForOwner{
 			OwnerType:    blder.forInput.object,
 			IsController: true,

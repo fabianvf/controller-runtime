@@ -56,9 +56,9 @@ func NewInformersMap(config *rest.Config,
 	disableDeepCopy DisableDeepCopyByGVK,
 ) *InformersMap {
 	return &InformersMap{
-		structured:   newStructuredInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy),
-		unstructured: newUnstructuredInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy),
-		metadata:     newMetadataInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy),
+		structured:   newStructuredInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy),
+		unstructured: newUnstructuredInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy),
+		metadata:     newMetadataInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy),
 
 		Scheme: scheme,
 	}

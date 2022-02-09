@@ -21,16 +21,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/common/log"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
+	toolscache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// NewCacheFunc - Function for creating a new cache from the options and a rest config.
-type NewCacheFunc func(config *rest.Config, opts Options) (Cache, error)
 
 // a new global namespaced cache to handle cluster scoped resources.
 const globalClusterCache = "_cluster"
@@ -66,7 +63,7 @@ func MultiClusterCacheBuilder(clusterNames []string) NewCacheFunc {
 			}
 			caches[cs] = c
 		}
-		return &multiNamespaceCache{namespaceToCache: caches, Scheme: opts.Scheme, RESTMapper: opts.Mapper, clusterCache: gCache}, nil
+		return &multiClusterCache{clusterToCache: caches, Scheme: opts.Scheme, RESTMapper: opts.Mapper, gClusterCache: gCache}, nil
 	}
 }
 
@@ -93,10 +90,10 @@ func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) 
 		return nil, fmt.Errorf("error getting clustername %q", err)
 	}
 
-	if len(clusterName) == "*" {
+	if (clusterName) == "*" {
 		globalInformer, err := c.gClusterCache.GetInformer(ctx, obj)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		informers[globalClusterCache] = globalInformer
 	}
@@ -109,13 +106,13 @@ func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) 
 		informers[cs] = informer
 	}
 
-	return &multiClusterCache{clusterToCache: informers}, nil
+	return &multiClusterInformer{clusterNameToInformer: informers}, nil
 
 }
 
 func getClusterName(obj client.Object) (string, error) {
 	if obj == nil {
-		return nil, fmt.Errorf("object cannot be empty %v", obj)
+		return "", fmt.Errorf("object cannot be empty %v", obj)
 	}
 	if obj.GetClusterName() != "" {
 		return "*", nil
@@ -124,39 +121,14 @@ func getClusterName(obj client.Object) (string, error) {
 	return obj.GetClusterName(), nil
 }
 
-func (c *multiNamespaceCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (Informer, error) {
-	informers := map[string]Informer{} // clusterName -> informer
-
-	clusterName, err := getCLusterName(obj)
-	if err != nil {
-		return err
-	}
-	// globalCLusterCache
-	if len(clusterName) == "*" {
-		clusterCacheInf, err := c.gClusterCache.GetInformerForKind(ctx, gvk)
-		if err != nil {
-			return err
-		}
-
-		informers[globalClusterCache] = clusterCacheInf
-		return multiClusterCache{clusterToCache: informers}, nil
-	}
-
-	for cs, cache := range c.clusterToCache {
-		informer, err := cache.GetInformerForKind(ctx, gvk)
-		if err != nil {
-			return err
-		}
-		informer[cs] = informer
-	}
-
-	return multiClusterCache{clusterToCache: informer}, nil
+func (c *multiClusterCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error) {
+	return nil, fmt.Errorf("not supported in multiClustercache")
 }
 
 func (c *multiClusterCache) Start(ctx context.Context) error {
 	// start global cache
 	go func() {
-		err := c.glusterCache.Start(ctx)
+		err := c.gClusterCache.Start(ctx)
 		if err != nil {
 			log.Error(err, "cluster scoped cache failed to start")
 		}
@@ -191,9 +163,9 @@ func (c *multiClusterCache) WaitForCacheSync(ctx context.Context) bool {
 	return synced
 }
 
-func (c *multiNamespaceCache) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
+func (c *multiClusterCache) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
 
-	clusterName, err := getCLusterName(obj)
+	clusterName, err := getClusterName(obj)
 	if err != nil {
 		return err
 	}
@@ -233,15 +205,16 @@ func (c *multiClusterCache) Get(ctx context.Context, key client.ObjectKey, obj c
 // ClusterName is passed => getCache
 // ListAll clusters => clusterName is "*"
 
-func (c *multiClusterCache) List(ctx context.Context, list client.ObjectList, opts ...client.ListOptions) {
+func (c *multiClusterCache) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	listOpts := client.ListOptions{}
-	listOpts.ApplyOptions(opts)
 
-	clusterName := opts.ClusterName
+	clusterName := listOpts.ClusterName
 	if clusterName == "" {
 		// initial stab - error out
 		fmt.Errorf("cluster Name is empty in listOpts %v", listOpts)
 	}
+
+	listOpts.ApplyOptions(opts)
 
 	if clusterName == "*" {
 		// Look at gloabal cluster cache
@@ -261,7 +234,7 @@ type multiClusterInformer struct {
 	clusterNameToInformer map[string]Informer
 }
 
-var _Informer = &multiClusterInformer
+var _Informer = &multiClusterInformer{}
 
 // AddEventHandler adds the handler to each namespaced informer.
 func (i *multiClusterInformer) AddEventHandler(handler toolscache.ResourceEventHandler) {
