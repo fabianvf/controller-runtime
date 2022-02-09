@@ -94,37 +94,36 @@ func (m *InformersMap) WaitForCacheSync(ctx context.Context) bool {
 // Get will create a new Informer and add it to the map of InformersMap if none exists.  Returns
 // the Informer from the map.
 // TODO: instead of passing down runtime.Object, pass client.Object
-func (m *InformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object, clusterName string) (bool, *MapEntry, error) {
-	fmt.Println("calling get from informersMap", clusterName)
+func (m *InformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object) (bool, *MapEntry, error) {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
-		return m.unstructured.Get(ctx, gvk, obj, clusterName)
+		return m.unstructured.Get(ctx, gvk, obj)
 	case *unstructured.UnstructuredList:
-		return m.unstructured.Get(ctx, gvk, obj, clusterName)
+		return m.unstructured.Get(ctx, gvk, obj)
 	case *metav1.PartialObjectMetadata:
-		return m.metadata.Get(ctx, gvk, obj, clusterName)
+		return m.metadata.Get(ctx, gvk, obj)
 	case *metav1.PartialObjectMetadataList:
-		return m.metadata.Get(ctx, gvk, obj, clusterName)
+		return m.metadata.Get(ctx, gvk, obj)
 	default:
-		return m.structured.Get(ctx, gvk, obj, clusterName)
+		return m.structured.Get(ctx, gvk, obj)
 	}
 }
 
 // newStructuredInformersMap creates a new InformersMap for structured objects.
 func newStructuredInformersMap(config *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper, resync time.Duration,
-	namespace string, clusterName string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
-	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy, createStructuredListWatch)
+	namespace string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
+	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy, createStructuredListWatch)
 }
 
 // newUnstructuredInformersMap creates a new InformersMap for unstructured objects.
 func newUnstructuredInformersMap(config *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper, resync time.Duration,
-	namespace string, clusterName string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
+	namespace string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
 	fmt.Println("coming to unstructured informer map!!!!!!!!!!!!")
-	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy, createUnstructuredListWatch)
+	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy, createUnstructuredListWatch)
 }
 
 // newMetadataInformersMap creates a new InformersMap for metadata-only objects.
 func newMetadataInformersMap(config *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper, resync time.Duration,
-	namespace string, clusterName string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
-	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, clusterName, selectors, disableDeepCopy, createMetadataListWatch)
+	namespace string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
+	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy, createMetadataListWatch)
 }

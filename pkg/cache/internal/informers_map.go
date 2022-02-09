@@ -52,11 +52,10 @@ func newSpecificInformersMap(config *rest.Config,
 	mapper meta.RESTMapper,
 	resync time.Duration,
 	namespace string,
-	clusterName string,
 	selectors SelectorsByGVK,
 	disableDeepCopy DisableDeepCopyByGVK,
 	createListWatcher createListWatcherFunc) *specificInformersMap {
-	fmt.Println("newSpecificInformerMap", namespace, clusterName)
+	fmt.Println("newSpecificInformerMap", namespace)
 	ip := &specificInformersMap{
 		config:            config,
 		Scheme:            scheme,
@@ -68,7 +67,6 @@ func newSpecificInformersMap(config *rest.Config,
 		startWait:         make(chan struct{}),
 		createListWatcher: createListWatcher,
 		namespace:         namespace,
-		clusterName:       clusterName,
 		selectors:         selectors.forGVK,
 		disableDeepCopy:   disableDeepCopy,
 	}
@@ -188,9 +186,9 @@ func (ip *specificInformersMap) HasSyncedFuncs() []cache.InformerSynced {
 
 // Get will create a new Informer and add it to the map of specificInformersMap if none exists.  Returns
 // the Informer from the map.
-func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object, clusterName string) (bool, *MapEntry, error) {
+func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object) (bool, *MapEntry, error) {
 	// Return the informer if it is found
-	fmt.Println("getting infformer from map", clusterName)
+	fmt.Println("getting infformer from map")
 	i, started, ok := func() (*MapEntry, bool, bool) {
 		ip.mu.RLock()
 		defer ip.mu.RUnlock()
@@ -200,7 +198,7 @@ func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersion
 
 	if !ok {
 		var err error
-		if i, started, err = ip.addInformerToMap(gvk, obj, clusterName); err != nil {
+		if i, started, err = ip.addInformerToMap(gvk, obj); err != nil {
 			return started, nil, err
 		}
 	}
@@ -215,8 +213,8 @@ func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersion
 	return started, i, nil
 }
 
-func (ip *specificInformersMap) addInformerToMap(gvk schema.GroupVersionKind, obj runtime.Object, clusterName string) (*MapEntry, bool, error) {
-	fmt.Println("getting added to informer Map", clusterName)
+func (ip *specificInformersMap) addInformerToMap(gvk schema.GroupVersionKind, obj runtime.Object) (*MapEntry, bool, error) {
+	fmt.Println("getting added to informer Map")
 	ip.mu.Lock()
 	defer ip.mu.Unlock()
 
@@ -247,11 +245,9 @@ func (ip *specificInformersMap) addInformerToMap(gvk schema.GroupVersionKind, ob
 			indexer:          ni.GetIndexer(),
 			groupVersionKind: gvk,
 			scopeName:        rm.Scope.Name(),
-			clusterName:      clusterName,
 			disableDeepCopy:  ip.disableDeepCopy.IsDisabled(gvk),
 		},
 	}
-	fmt.Println(clusterName)
 	ip.informersByGVK[gvk] = i
 	fmt.Println("creating map entry", i.Reader.clusterName, i.Reader.groupVersionKind)
 

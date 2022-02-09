@@ -39,7 +39,7 @@ type FakeInformers struct {
 }
 
 // GetInformerForKind implements Informers.
-func (c *FakeInformers) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (cache.Informer, error) {
+func (c *FakeInformers) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
 	if c.Scheme == nil {
 		c.Scheme = scheme.Scheme
 	}

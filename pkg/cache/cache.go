@@ -56,7 +56,7 @@ type Informers interface {
 
 	// GetInformerForKind is similar to GetInformer, except that it takes a group-version-kind, instead
 	// of the underlying object.
-	GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (Informer, error)
+	GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error)
 
 	// Start runs all the informers known to this cache until the context is closed.
 	// It blocks.

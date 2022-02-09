@@ -22,7 +22,6 @@ import (
 	"reflect"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,7 +58,7 @@ func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out clie
 		return err
 	}
 
-	started, cache, err := ip.InformersMap.Get(ctx, gvk, out, out.GetClusterName())
+	started, cache, err := ip.InformersMap.Get(ctx, gvk, out)
 	if err != nil {
 		return err
 	}
@@ -76,11 +75,11 @@ func (ip *informerCache) List(ctx context.Context, out client.ObjectList, opts .
 	if err != nil {
 		return err
 	}
-	metadata, err := meta.Accessor(cacheTypeObj)
-	if err != nil {
-		return err
-	}
-	started, cache, err := ip.InformersMap.Get(ctx, *gvk, cacheTypeObj, metadata.GetClusterName())
+	// metadata, err := meta.Accessor(cacheTypeObj)
+	// if err != nil {
+	// 	return err
+	// }
+	started, cache, err := ip.InformersMap.Get(ctx, *gvk, cacheTypeObj)
 	if err != nil {
 		return err
 	}
@@ -135,14 +134,14 @@ func (ip *informerCache) objectTypeForListObject(list client.ObjectList) (*schem
 }
 
 // GetInformerForKind returns the informer for the GroupVersionKind.
-func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (Informer, error) {
+func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error) {
 	// Map the gvk to an object
 	obj, err := ip.Scheme.New(gvk)
 	if err != nil {
 		return nil, err
 	}
 
-	_, i, err := ip.InformersMap.Get(ctx, gvk, obj, clusterName)
+	_, i, err := ip.InformersMap.Get(ctx, gvk, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +156,7 @@ func (ip *informerCache) GetInformer(ctx context.Context, obj client.Object) (In
 	}
 
 	fmt.Println("getting informer from indexer")
-	_, i, err := ip.InformersMap.Get(ctx, gvk, obj, obj.GetClusterName())
+	_, i, err := ip.InformersMap.Get(ctx, gvk, obj)
 	if err != nil {
 		return nil, err
 	}
