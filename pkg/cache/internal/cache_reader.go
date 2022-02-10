@@ -61,7 +61,7 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 	if c.scopeName == apimeta.RESTScopeNameRoot {
 		key.Namespace = ""
 	}
-	storeKey := objectKeyToStoreKey(key, out.GetClusterName())
+	storeKey := objectKeyToStoreKey(key)
 	fmt.Println("storeKey", storeKey)
 
 	// Lookup the object from the indexer cache
@@ -184,11 +184,11 @@ func (c *CacheReader) List(_ context.Context, out client.ObjectList, opts ...cli
 // It's akin to MetaNamespaceKeyFunc.  It's separate from
 // String to allow keeping the key format easily in sync with
 // MetaNamespaceKeyFunc.
-func objectKeyToStoreKey(k client.ObjectKey, clusterName string) string {
+func objectKeyToStoreKey(k client.ObjectKey) string {
 	if k.Namespace == "" {
-		return k.Name + clusterName
+		return k.Name
 	}
-	return k.Namespace + "/" + k.Name + "/" + clusterName
+	return k.Namespace + "/" + k.Name
 }
 
 // requiresExactMatch checks if the given field selector is of the form `k=v` or `k==v`.
