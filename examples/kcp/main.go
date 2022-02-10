@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,9 +45,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log := log.FromContext(ctx).WithValues("chaospod", req.NamespacedName)
 	log.V(1).Info("reconciling chaos pod")
 
-	log.Info(fmt.Sprintf("%+v\n\n%+v\n", ctx, req))
+	fmt.Println("***************************************")
+	fmt.Println(req.ClusterName)
+	fmt.Println("***************************************")
+	// log.Info(fmt.Sprintf("%+v\n\n%+v\n", ctx, req))
 
-	var chaospod api.ChaosPod
+	chaospod := api.ChaosPod{ObjectMeta: metav1.ObjectMeta{ClusterName: req.ClusterName}}
 	if err := r.Get(ctx, req.NamespacedName, &chaospod); err != nil {
 		log.Error(err, "unable to get chaosctl")
 		return ctrl.Result{}, err
@@ -56,6 +60,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func main() {
+
 	ctrl.SetLogger(zap.New())
 
 	cfg := ctrl.GetConfigOrDie()
