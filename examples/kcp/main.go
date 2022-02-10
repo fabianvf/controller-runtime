@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"os"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
@@ -56,6 +58,25 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
+	cm := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-cm",
+			Namespace:   "default",
+			ClusterName: req.ClusterName,
+		},
+		Data: map[string]string{
+			"test-key": "test-value",
+		},
+	}
+	if err := r.Create(ctx, cm); err != nil {
+		log.Error(err, "unable to create configmap")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -74,6 +95,11 @@ func main() {
 
 	// in a real controller, we'd create a new scheme for this
 	err = api.AddToScheme(mgr.GetScheme())
+	if err != nil {
+		setupLog.Error(err, "unable to add scheme")
+		os.Exit(1)
+	}
+	err = corev1.AddToScheme(mgr.GetScheme())
 	if err != nil {
 		setupLog.Error(err, "unable to add scheme")
 		os.Exit(1)
