@@ -50,14 +50,18 @@ func MultiClusterCacheBuilder(clusterNames []string) NewCacheFunc {
 		caches := map[string]Cache{}
 
 		// create aglobal cache for * scope
-		gCache, err := New(config, opts)
+		globalConfig := *config
+		globalConfig.Host = globalConfig.Host + "/clusters/*"
+		gCache, err := New(&globalConfig, opts)
 		if err != nil {
 			return nil, fmt.Errorf("error creating global cache %v", err)
 		}
 
 		for _, cs := range clusterNames {
+			scopedConfig := *config
+			scopedConfig.Host = config.Host + "/clusters/" + cs
 			opts.ClusterName = cs
-			c, err := New(config, opts)
+			c, err := New(&scopedConfig, opts)
 			if err != nil {
 				return nil, err
 			}
