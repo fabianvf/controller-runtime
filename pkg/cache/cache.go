@@ -112,6 +112,9 @@ type Options struct {
 	// Default watches all namespaces
 	Namespace string
 
+	// ClusterName restricts cache's ListeWatch to the desired clusterscope
+	ClusterName string
+
 	// SelectorsByObject restricts the cache's ListWatch to the desired
 	// fields per GVK at the specified object, the map's value must implement
 	// Selector [1] using for example a Set [2]

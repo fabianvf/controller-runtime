@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clusters"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -58,6 +59,8 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 	if c.scopeName == apimeta.RESTScopeNameRoot {
 		key.Namespace = ""
 	}
+	key.Name = clusters.ToClusterAwareKey(out.GetClusterName(), key.Name)
+
 	storeKey := objectKeyToStoreKey(key)
 
 	// Lookup the object from the indexer cache
