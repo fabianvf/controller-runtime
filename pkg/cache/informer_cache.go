@@ -52,7 +52,6 @@ type informerCache struct {
 
 // Get implements Reader.
 func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out client.Object) error {
-	fmt.Println("calling Get from cacheReader")
 	gvk, err := apiutil.GVKForObject(out, ip.Scheme)
 	if err != nil {
 		return err
@@ -75,10 +74,7 @@ func (ip *informerCache) List(ctx context.Context, out client.ObjectList, opts .
 	if err != nil {
 		return err
 	}
-	// metadata, err := meta.Accessor(cacheTypeObj)
-	// if err != nil {
-	// 	return err
-	// }
+
 	started, cache, err := ip.InformersMap.Get(ctx, *gvk, cacheTypeObj)
 	if err != nil {
 		return err
@@ -155,7 +151,6 @@ func (ip *informerCache) GetInformer(ctx context.Context, obj client.Object) (In
 		return nil, err
 	}
 
-	fmt.Println("getting informer from indexer")
 	_, i, err := ip.InformersMap.Get(ctx, gvk, obj)
 	if err != nil {
 		return nil, err

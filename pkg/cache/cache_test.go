@@ -1140,45 +1140,44 @@ func CacheTest(createCacheFunc func(config *rest.Config, opts cache.Options) (ca
 					By("verifying the object is received on the channel")
 					Eventually(out).Should(Receive(Equal(pod)))
 				})
-				//TODO: fix the test by adding clusterName
-				// It("should be able to get an informer by group/version/kind", func() {
-				// 	By("getting an shared index informer for gvk = core/v1/pod")
-				// 	gvk := schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
-				// 	sii, err := informerCache.GetInformerForKind(context.TODO(), gvk)
-				// 	Expect(err).NotTo(HaveOccurred())
-				// 	Expect(sii).NotTo(BeNil())
-				// 	Expect(sii.HasSynced()).To(BeTrue())
+				It("should be able to get an informer by group/version/kind", func() {
+					By("getting an shared index informer for gvk = core/v1/pod")
+					gvk := schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
+					sii, err := informerCache.GetInformerForKind(context.TODO(), gvk)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(sii).NotTo(BeNil())
+					Expect(sii.HasSynced()).To(BeTrue())
 
-				// 	By("adding an event handler listening for object creation which sends the object to a channel")
-				// 	out := make(chan interface{})
-				// 	addFunc := func(obj interface{}) {
-				// 		out <- obj
-				// 	}
-				// 	sii.AddEventHandler(kcache.ResourceEventHandlerFuncs{AddFunc: addFunc})
+					By("adding an event handler listening for object creation which sends the object to a channel")
+					out := make(chan interface{})
+					addFunc := func(obj interface{}) {
+						out <- obj
+					}
+					sii.AddEventHandler(kcache.ResourceEventHandlerFuncs{AddFunc: addFunc})
 
-				// 	By("adding an object")
-				// 	cl, err := client.New(cfg, client.Options{})
-				// 	Expect(err).NotTo(HaveOccurred())
-				// 	pod := &corev1.Pod{
-				// 		ObjectMeta: metav1.ObjectMeta{
-				// 			Name:      "informer-gvk",
-				// 			Namespace: "default",
-				// 		},
-				// 		Spec: corev1.PodSpec{
-				// 			Containers: []corev1.Container{
-				// 				{
-				// 					Name:  "nginx",
-				// 					Image: "nginx",
-				// 				},
-				// 			},
-				// 		},
-				// 	}
-				// 	Expect(cl.Create(context.Background(), pod)).To(Succeed())
-				// 	defer deletePod(pod)
+					By("adding an object")
+					cl, err := client.New(cfg, client.Options{})
+					Expect(err).NotTo(HaveOccurred())
+					pod := &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "informer-gvk",
+							Namespace: "default",
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "nginx",
+									Image: "nginx",
+								},
+							},
+						},
+					}
+					Expect(cl.Create(context.Background(), pod)).To(Succeed())
+					defer deletePod(pod)
 
-				// 	By("verifying the object is received on the channel")
-				// 	Eventually(out).Should(Receive(Equal(pod)))
-				// })
+					By("verifying the object is received on the channel")
+					Eventually(out).Should(Receive(Equal(pod)))
+				})
 				It("should be able to index an object field then retrieve objects by that field", func() {
 					By("creating the cache")
 					informer, err := cache.New(cfg, cache.Options{})
@@ -1234,18 +1233,17 @@ func CacheTest(createCacheFunc func(config *rest.Config, opts cache.Options) (ca
 					Expect(apierrors.IsTimeout(err)).To(BeTrue())
 				})
 
-				// TODO: fix the test by adding clusterName
-				// It("should allow getting an informer by group/version/kind to be cancelled", func() {
-				// 	By("creating a context and cancelling it")
-				// 	informerCacheCancel()
+				It("should allow getting an informer by group/version/kind to be cancelled", func() {
+					By("creating a context and cancelling it")
+					informerCacheCancel()
 
-				// 	By("getting an shared index informer for gvk = core/v1/pod with a cancelled context")
-				// 	gvk := schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
-				// 	sii, err := informerCache.GetInformerForKind(informerCacheCtx, gvk)
-				// 	Expect(err).To(HaveOccurred())
-				// 	Expect(sii).To(BeNil())
-				// 	Expect(apierrors.IsTimeout(err)).To(BeTrue())
-				// })
+					By("getting an shared index informer for gvk = core/v1/pod with a cancelled context")
+					gvk := schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
+					sii, err := informerCache.GetInformerForKind(informerCacheCtx, gvk)
+					Expect(err).To(HaveOccurred())
+					Expect(sii).To(BeNil())
+					Expect(apierrors.IsTimeout(err)).To(BeTrue())
+				})
 			})
 			Context("with unstructured objects", func() {
 				It("should be able to get informer for the object", func() {

@@ -18,7 +18,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -51,7 +50,6 @@ func NewInformersMap(config *rest.Config,
 	mapper meta.RESTMapper,
 	resync time.Duration,
 	namespace string,
-	clusterName string,
 	selectors SelectorsByGVK,
 	disableDeepCopy DisableDeepCopyByGVK,
 ) *InformersMap {
@@ -93,7 +91,6 @@ func (m *InformersMap) WaitForCacheSync(ctx context.Context) bool {
 
 // Get will create a new Informer and add it to the map of InformersMap if none exists.  Returns
 // the Informer from the map.
-// TODO: instead of passing down runtime.Object, pass client.Object
 func (m *InformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object) (bool, *MapEntry, error) {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
@@ -118,7 +115,6 @@ func newStructuredInformersMap(config *rest.Config, scheme *runtime.Scheme, mapp
 // newUnstructuredInformersMap creates a new InformersMap for unstructured objects.
 func newUnstructuredInformersMap(config *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper, resync time.Duration,
 	namespace string, selectors SelectorsByGVK, disableDeepCopy DisableDeepCopyByGVK) *specificInformersMap {
-	fmt.Println("coming to unstructured informer map!!!!!!!!!!!!")
 	return newSpecificInformersMap(config, scheme, mapper, resync, namespace, selectors, disableDeepCopy, createUnstructuredListWatch)
 }
 

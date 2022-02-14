@@ -511,7 +511,7 @@ func (c *nonTypedOnlyCache) GetInformer(ctx context.Context, obj client.Object) 
 		return nil, fmt.Errorf("did not want to provide an informer for normal type %T", obj)
 	}
 }
-func (c *nonTypedOnlyCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, clusterName string) (cache.Informer, error) {
+func (c *nonTypedOnlyCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
 	return nil, fmt.Errorf("don't try to sidestep the restriction on informer types by calling GetInformerForKind")
 }
 

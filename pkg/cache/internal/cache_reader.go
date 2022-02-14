@@ -45,9 +45,6 @@ type CacheReader struct {
 	// groupVersionKind is the group-version-kind of the resource.
 	groupVersionKind schema.GroupVersionKind
 
-	// clusterName is the clusterName of the resource
-	clusterName string
-
 	// scopeName is the scope of the resource (namespaced or cluster-scoped).
 	scopeName apimeta.RESTScopeName
 
@@ -65,8 +62,6 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 	key.Name = clusters.ToClusterAwareKey(out.GetClusterName(), key.Name)
 
 	storeKey := objectKeyToStoreKey(key)
-	fmt.Println("storeKey", storeKey)
-	fmt.Println("c.Indexer.ListKeys()", c.indexer.ListKeys())
 
 	// Lookup the object from the indexer cache
 	obj, exists, err := c.indexer.GetByKey(storeKey)
@@ -76,7 +71,6 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Ob
 
 	// Not found, return an error
 	if !exists {
-		fmt.Println("not found error here")
 		// Resource gets transformed into Kind in the error anyway, so this is fine
 		return apierrors.NewNotFound(schema.GroupResource{
 			Group:    c.groupVersionKind.Group,

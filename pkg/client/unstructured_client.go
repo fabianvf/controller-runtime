@@ -170,7 +170,6 @@ func (uc *unstructuredClient) Patch(ctx context.Context, obj Object, patch Patch
 
 // Get implements client.Client.
 func (uc *unstructuredClient) Get(ctx context.Context, key ObjectKey, obj Object) error {
-	fmt.Println("********unstructured client ***********")
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)

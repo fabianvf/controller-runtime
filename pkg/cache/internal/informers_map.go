@@ -55,7 +55,6 @@ func newSpecificInformersMap(config *rest.Config,
 	selectors SelectorsByGVK,
 	disableDeepCopy DisableDeepCopyByGVK,
 	createListWatcher createListWatcherFunc) *specificInformersMap {
-	fmt.Println("newSpecificInformerMap", namespace)
 	ip := &specificInformersMap{
 		config:            config,
 		Scheme:            scheme,
@@ -130,10 +129,6 @@ type specificInformersMap struct {
 	// default or empty string means all namespaces
 	namespace string
 
-	// clusterName is the name of the cluster containing objects wherein watches
-	// are created
-	clusterName string
-
 	// selectors are the label or field selectors that will be added to the
 	// ListWatch ListOptions.
 	selectors func(gvk schema.GroupVersionKind) Selector
@@ -188,7 +183,6 @@ func (ip *specificInformersMap) HasSyncedFuncs() []cache.InformerSynced {
 // the Informer from the map.
 func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersionKind, obj runtime.Object) (bool, *MapEntry, error) {
 	// Return the informer if it is found
-	fmt.Println("getting infformer from map")
 	i, started, ok := func() (*MapEntry, bool, bool) {
 		ip.mu.RLock()
 		defer ip.mu.RUnlock()
@@ -214,7 +208,6 @@ func (ip *specificInformersMap) Get(ctx context.Context, gvk schema.GroupVersion
 }
 
 func (ip *specificInformersMap) addInformerToMap(gvk schema.GroupVersionKind, obj runtime.Object) (*MapEntry, bool, error) {
-	fmt.Println("getting added to informer Map")
 	ip.mu.Lock()
 	defer ip.mu.Unlock()
 
@@ -249,7 +242,6 @@ func (ip *specificInformersMap) addInformerToMap(gvk schema.GroupVersionKind, ob
 		},
 	}
 	ip.informersByGVK[gvk] = i
-	fmt.Println("creating map entry", i.Reader.clusterName, i.Reader.groupVersionKind)
 
 	// Start the Informer if need by
 	// TODO(seans): write thorough tests and document what happens here - can you add indexers?
@@ -349,7 +341,6 @@ func createUnstructuredListWatch(gvk schema.GroupVersionKind, ip *specificInform
 }
 
 func createMetadataListWatch(gvk schema.GroupVersionKind, ip *specificInformersMap) (*cache.ListWatch, error) {
-	fmt.Println("setting up list Watcher")
 	// Kubernetes APIs work against Resources, not GroupVersionKinds.  Map the
 	// groupVersionKind to the Resource API we will use.
 	mapping, err := ip.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)

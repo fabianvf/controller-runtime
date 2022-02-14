@@ -29,17 +29,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// a new global namespaced cache to handle cluster scoped resources.
+// a new global cluster cache to handle cluster scoped resources.
 const globalClusterCache = "_cluster"
 
 // [_cluster -> cache ("*"), clusterNames -> caches ]
 
-// MultiNamespacedCacheBuilder - Builder function to create a new multi-namespaced cache.
-// This will scope the cache to a list of namespaces. Listing for all namespaces
-// will list for all the namespaces that this knows about. By default this will create
-// a global cache for cluster scoped resource. Note that this is not intended
-// to be used for excluding namespaces, this is better done via a Predicate. Also note that
-// you may face performance issues when using this with a high number of namespaces.
+// MultiClusterCacheBuilder - Builder function to create a new multi-cluster cache.
+// This will scope the cache to a list of clusters. Listing for all clusters
+// will list for all the clusters that this knows about. By default this will create
+// a global cache for all cluster resource.
 func MultiClusterCacheBuilder(clusterNames []string) NewCacheFunc {
 	return func(config *rest.Config, opts Options) (Cache, error) {
 		opts, err := defaultOpts(config, opts)
@@ -71,7 +69,7 @@ func MultiClusterCacheBuilder(clusterNames []string) NewCacheFunc {
 	}
 }
 
-// multiNamespaceCache knows how to handle multiple namespaced caches
+// multiClusterCache knows how to handle multiple namespaced caches
 // Use this feature when scoping permissions for your
 // operator to a list of namespaces instead of watching every namespace
 // in the cluster.
@@ -84,7 +82,7 @@ type multiClusterCache struct {
 
 var _ Cache = &multiClusterCache{}
 
-// Methods for multiNamespaceCache to conform to the Informers interface.
+// Methods for multiClusterCache to conform to the Informers interface.
 func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) (Informer, error) {
 	informers := map[string]Informer{}
 
@@ -215,7 +213,7 @@ func (c *multiClusterCache) List(ctx context.Context, list client.ObjectList, op
 	clusterName := listOpts.ClusterName
 	if clusterName == "" {
 		// initial stab - error out
-		fmt.Errorf("cluster Name is empty in listOpts %v", listOpts)
+		fmt.Errorf("cluster Name is empty in listOpts")
 	}
 
 	listOpts.ApplyOptions(opts)
@@ -240,21 +238,21 @@ type multiClusterInformer struct {
 
 var _Informer = &multiClusterInformer{}
 
-// AddEventHandler adds the handler to each namespaced informer.
+// AddEventHandler adds the handler to each cluster scoped informer.
 func (i *multiClusterInformer) AddEventHandler(handler toolscache.ResourceEventHandler) {
 	for _, informer := range i.clusterNameToInformer {
 		informer.AddEventHandler(handler)
 	}
 }
 
-// AddEventHandlerWithResyncPeriod adds the handler with a resync period to each namespaced informer.
+// AddEventHandlerWithResyncPeriod adds the handler with a resync period to each cluster scoped informer.
 func (i *multiClusterInformer) AddEventHandlerWithResyncPeriod(handler toolscache.ResourceEventHandler, resyncPeriod time.Duration) {
 	for _, informer := range i.clusterNameToInformer {
 		informer.AddEventHandlerWithResyncPeriod(handler, resyncPeriod)
 	}
 }
 
-// AddIndexers adds the indexer for each namespaced informer.
+// AddIndexers adds the indexer for each cluster scoped informer.
 func (i *multiClusterInformer) AddIndexers(indexers toolscache.Indexers) error {
 	for _, informer := range i.clusterNameToInformer {
 		err := informer.AddIndexers(indexers)

@@ -59,7 +59,6 @@ type Builder struct {
 	ctrl             controller.Controller
 	ctrlOptions      controller.Options
 	name             string
-	cluster          string
 }
 
 // ControllerManagedBy returns a new controller builder that will be started by the provided Manager.
@@ -131,11 +130,6 @@ func (blder *Builder) Watches(src source.Source, eventhandler handler.EventHandl
 	}
 
 	blder.watchesInput = append(blder.watchesInput, input)
-	return blder
-}
-
-func (blder *Builder) Cluster(c string) *Builder {
-	blder.cluster = c
 	return blder
 }
 
@@ -223,16 +217,11 @@ func (blder *Builder) project(obj client.Object, proj objectProjection) (client.
 }
 
 func (blder *Builder) doWatch() error {
-	fmt.Println("watching resource")
 	// Reconcile type
 	typeForSrc, err := blder.project(blder.forInput.object, blder.forInput.objectProjection)
 	if err != nil {
 		return err
 	}
-
-	// watch the cluster which is being passed to the controller - initial watch
-	typeForSrc.SetClusterName(blder.cluster)
-
 	src := &source.Kind{Type: typeForSrc}
 	hdler := &handler.EnqueueRequestForObject{}
 	allPredicates := append(blder.globalPredicates, blder.forInput.predicates...)

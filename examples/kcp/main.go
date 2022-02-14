@@ -107,7 +107,7 @@ func main() {
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&api.ChaosPod{}).
-		Cluster("*"). //:6443/apis/chaospods => :6443/clusters/*/apis/chaospods
+		// Cluster("*"). //:6443/apis/chaospods => :6443/clusters/*/apis/chaospods
 		Complete(&reconciler{
 			Client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
