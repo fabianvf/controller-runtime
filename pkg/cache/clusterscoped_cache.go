@@ -65,7 +65,7 @@ func MultiClusterCacheBuilder(clusterNames []string) NewCacheFunc {
 			}
 			caches[cs] = c
 		}
-		return &multiClusterCache{clusterToCache: caches, Scheme: opts.Scheme, RESTMapper: opts.Mapper, gClusterCache: gCache}, nil
+		return &multiClusterCache{clusterToCache: caches, Scheme: opts.Scheme, RESTMapper: opts.Mapper, gClusterCache: gCache, cfg: *config, opts: opts}, nil
 	}
 }
 
@@ -78,6 +78,8 @@ type multiClusterCache struct {
 	Scheme         *runtime.Scheme
 	RESTMapper     apimeta.RESTMapper
 	gClusterCache  Cache // Point to "*"
+	cfg            rest.Config
+	opts           Options
 }
 
 var _ Cache = &multiClusterCache{}
@@ -87,10 +89,7 @@ func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) 
 	informers := map[string]Informer{}
 
 	//get CLusterName
-	clusterName, err := getClusterName(obj)
-	if err != nil {
-		return nil, fmt.Errorf("error getting clustername %q", err)
-	}
+	clusterName := getClusterName(ctx, obj)
 
 	if (clusterName) == "*" {
 		globalInformer, err := c.gClusterCache.GetInformer(ctx, obj)
@@ -99,6 +98,7 @@ func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) 
 		}
 		informers[globalClusterCache] = globalInformer
 	}
+	obj.SetClusterName(clusterName)
 
 	for cs, cache := range c.clusterToCache {
 		informer, err := cache.GetInformer(ctx, obj)
@@ -112,15 +112,17 @@ func (c *multiClusterCache) GetInformer(ctx context.Context, obj client.Object) 
 
 }
 
-func getClusterName(obj client.Object) (string, error) {
-	if obj == nil {
-		return "", fmt.Errorf("object cannot be empty %v", obj)
-	}
-	if obj.GetClusterName() != "" {
-		return "*", nil
+func getClusterName(ctx context.Context, obj client.Object) string {
+	clusterName := obj.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
 	}
 
-	return obj.GetClusterName(), nil
+	if clusterName == "" {
+		return "*"
+	}
+
+	return clusterName
 }
 
 func (c *multiClusterCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error) {
@@ -167,14 +169,12 @@ func (c *multiClusterCache) WaitForCacheSync(ctx context.Context) bool {
 
 func (c *multiClusterCache) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
 
-	clusterName, err := getClusterName(obj)
-	if err != nil {
-		return err
-	}
+	clusterName := getClusterName(ctx, obj)
 
 	if clusterName == "*" {
 		return c.gClusterCache.IndexField(ctx, obj, field, extractValue)
 	}
+	obj.SetClusterName(clusterName)
 
 	for _, cache := range c.clusterToCache {
 		if err := cache.IndexField(ctx, obj, field, extractValue); err != nil {
@@ -185,20 +185,35 @@ func (c *multiClusterCache) IndexField(ctx context.Context, obj client.Object, f
 }
 
 func (c *multiClusterCache) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
-	clusterName, err := getClusterName(obj)
-	if err != nil {
-		return err
-	}
+	clusterName := getClusterName(ctx, obj)
 
 	if clusterName == "*" {
 		// Look into the global cache to fetch the object
 		return c.gClusterCache.Get(ctx, key, obj)
 	}
+	obj.SetClusterName(clusterName)
 
 	cache, ok := c.clusterToCache[clusterName]
 	if !ok {
-		return fmt.Errorf("unable to get: %v because of unknown clusterName for the cache", key)
+		scopedConfig := c.cfg
+		scopedConfig.Host = c.cfg.Host + "/clusters/" + clusterName
+		c.opts.ClusterName = clusterName
+		newCache, err := New(&scopedConfig, c.opts)
+		if err != nil {
+			return err
+		}
+		c.clusterToCache[clusterName] = newCache
+		cache = newCache
+		go func(cs string, cache Cache) {
+			// TODO this is totally wrong, cache.Start blocks
+			// How do we dynamically start caches as requests to new clusters come in?
+			err := cache.Start(ctx)
+			if err != nil {
+				log.Error(err, "multiClusterCache cache failed to start cluster informer", "cluster", cs)
+			}
+		}(clusterName, newCache)
 	}
+
 	return cache.Get(ctx, key, obj)
 }
 
@@ -211,6 +226,9 @@ func (c *multiClusterCache) List(ctx context.Context, list client.ObjectList, op
 	listOpts := client.ListOptions{}
 
 	clusterName := listOpts.ClusterName
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
 	if clusterName == "" {
 		// initial stab - error out
 		fmt.Errorf("cluster Name is empty in listOpts")

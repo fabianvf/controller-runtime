@@ -49,10 +49,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	fmt.Println("***************************************")
 	fmt.Println(req.ClusterName)
+	fmt.Println(ctx.Value("clusterName"))
 	fmt.Println("***************************************")
 	// log.Info(fmt.Sprintf("%+v\n\n%+v\n", ctx, req))
 
-	chaospod := api.ChaosPod{ObjectMeta: metav1.ObjectMeta{ClusterName: req.ClusterName}}
+	var chaospod api.ChaosPod
 	if err := r.Get(ctx, req.NamespacedName, &chaospod); err != nil {
 		log.Error(err, "unable to get chaosctl")
 		return ctrl.Result{}, err
@@ -73,8 +74,9 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 	}
 	if err := r.Create(ctx, cm); err != nil {
-		log.Error(err, "unable to create configmap")
-		return ctrl.Result{}, err
+		log.Info("CM creation fialed")
+		// log.Error(err, "this is fine")
+		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil
