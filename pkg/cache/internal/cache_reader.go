@@ -55,11 +55,17 @@ type CacheReader struct {
 }
 
 // Get checks the indexer for the object and writes a copy of it if found.
-func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out client.Object) error {
+func (c *CacheReader) Get(ctx context.Context, key client.ObjectKey, out client.Object) error {
 	if c.scopeName == apimeta.RESTScopeNameRoot {
 		key.Namespace = ""
 	}
-	key.Name = clusters.ToClusterAwareKey(out.GetClusterName(), key.Name)
+
+	clusterName := out.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
+	key.Name = clusters.ToClusterAwareKey(clusterName, key.Name)
 
 	storeKey := objectKeyToStoreKey(key)
 

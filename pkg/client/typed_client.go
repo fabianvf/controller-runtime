@@ -40,10 +40,15 @@ func (c *typedClient) Create(ctx context.Context, obj Object, opts ...CreateOpti
 		return err
 	}
 
+	clusterName := o.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
 	createOpts := &CreateOptions{}
 	createOpts.ApplyOptions(opts)
 	return o.Post().
-		Cluster(o.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Body(obj).
@@ -61,8 +66,13 @@ func (c *typedClient) Update(ctx context.Context, obj Object, opts ...UpdateOpti
 
 	updateOpts := &UpdateOptions{}
 	updateOpts.ApplyOptions(opts)
+	clusterName := o.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
 	return o.Put().
-		Cluster(o.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -82,8 +92,13 @@ func (c *typedClient) Delete(ctx context.Context, obj Object, opts ...DeleteOpti
 	deleteOpts := DeleteOptions{}
 	deleteOpts.ApplyOptions(opts)
 
+	clusterName := o.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
 	return o.Delete().
-		Cluster(o.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -101,9 +116,13 @@ func (c *typedClient) DeleteAllOf(ctx context.Context, obj Object, opts ...Delet
 
 	deleteAllOfOpts := DeleteAllOfOptions{}
 	deleteAllOfOpts.ApplyOptions(opts)
+	clusterName := o.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
 
 	return o.Delete().
-		Cluster(o.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(deleteAllOfOpts.ListOptions.Namespace, o.isNamespaced()).
 		Resource(o.resource()).
 		VersionedParams(deleteAllOfOpts.AsListOptions(), c.paramCodec).
@@ -125,8 +144,13 @@ func (c *typedClient) Patch(ctx context.Context, obj Object, patch Patch, opts .
 	}
 
 	patchOpts := &PatchOptions{}
+	clusterName := o.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
 	return o.Patch(patch.Type()).
-		Cluster(o.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -142,8 +166,14 @@ func (c *typedClient) Get(ctx context.Context, key ObjectKey, obj Object) error 
 	if err != nil {
 		return err
 	}
+
+	clusterName := obj.GetClusterName()
+	if clusterName == "" {
+		clusterName, _ = ctx.Value("clusterName").(string)
+	}
+
 	return r.Get().
-		Cluster(obj.GetClusterName()).
+		Cluster(clusterName).
 		NamespaceIfScoped(key.Namespace, r.isNamespaced()).
 		Resource(r.resource()).
 		Name(key.Name).Do(ctx).Into(obj)
