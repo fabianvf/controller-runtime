@@ -204,14 +204,13 @@ func (c *multiClusterCache) Get(ctx context.Context, key client.ObjectKey, obj c
 		}
 		c.clusterToCache[clusterName] = newCache
 		cache = newCache
-		go func(cs string, cache Cache) {
-			// TODO this is totally wrong, cache.Start blocks
-			// How do we dynamically start caches as requests to new clusters come in?
-			err := cache.Start(ctx)
+		go func(ctx context.Context, cache Cache, clusterName string) {
+			err = cache.Start(ctx)
 			if err != nil {
-				log.Error(err, "multiClusterCache cache failed to start cluster informer", "cluster", cs)
+				log.Error(err, "multiClusterCache cache failed to start cluster informer", "cluster", clusterName)
 			}
-		}(clusterName, newCache)
+		}(ctx, cache, clusterName)
+		cache.WaitForCacheSync(ctx)
 	}
 
 	return cache.Get(ctx, key, obj)
