@@ -74,7 +74,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 	}
 	if err := r.Create(ctx, cm); err != nil {
-		log.Info("CM creation fialed", err)
+		log.Info("CM creation failed", err)
 		// log.Error(err, "this is fine")
 		return ctrl.Result{}, nil
 	}
