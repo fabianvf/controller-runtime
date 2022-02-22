@@ -74,7 +74,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 	}
 	if err := r.Create(ctx, cm); err != nil {
-		log.Info("CM creation fialed")
+		log.Info("CM creation fialed", err)
 		// log.Error(err, "this is fine")
 		return ctrl.Result{}, nil
 	}
@@ -88,7 +88,7 @@ func main() {
 
 	cfg := ctrl.GetConfigOrDie()
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		NewCache: cache.MultiClusterCacheBuilder([]string{"*"}),
+		NewCache: cache.MultiClusterMinCache(),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
