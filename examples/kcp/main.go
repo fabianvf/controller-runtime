@@ -33,8 +33,11 @@ import (
 	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -119,14 +122,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&api.ChaosPod{}).
-		Complete(&reconciler{
+	c, err := controller.New("kcp-controller", mgr, controller.Options{
+		Reconciler: &reconciler{
 			Client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-		})
+		}})
 	if err != nil {
-		setupLog.Error(err, "unable to create controller")
+		setupLog.Error(err, "unable to set up individual controller")
+		os.Exit(1)
+	}
+	if err := c.Watch(&source.Kind{Type: &api.ChaosPod{}}, &kcp.EnqueueRequestForObject{}); err != nil {
+		setupLog.Error(err, "unable to watch chaospods")
 		os.Exit(1)
 	}
 
