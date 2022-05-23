@@ -25,9 +25,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -86,7 +90,18 @@ func main() {
 	ctrl.SetLogger(zap.New())
 
 	cfg := ctrl.GetConfigOrDie()
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{})
+	httpClient, err := rest.HTTPClientFor(cfg)
+	if err != nil {
+		setupLog.Error(err, "unable to build http client")
+		os.Exit(1)
+	}
+	clusterRoundTripper := kcpclient.NewClusterRoundTripper(httpClient.Transport)
+	httpClient.Transport = clusterRoundTripper
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		NewCache: cache.BuilderWithOptions(
+			cache.Options{
+				HTTPClient: httpClient,
+			})})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
