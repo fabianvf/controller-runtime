@@ -111,7 +111,6 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (_ re
 	}
 	log := c.Log.WithValues("name", req.Name, "namespace", req.Namespace)
 	ctx = logf.IntoContext(ctx, log)
-	ctx = context.WithValue(ctx, "clusterName", req.ClusterName)
 	return c.Do.Reconcile(ctx, req)
 }
 

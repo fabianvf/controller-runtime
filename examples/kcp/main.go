@@ -28,7 +28,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -44,17 +43,17 @@ type reconciler struct {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx).WithValues("chaospod", req.NamespacedName)
+	log := log.FromContext(ctx).WithValues("chaospod", req.ObjectKey)
 	log.V(1).Info("reconciling chaos pod")
 
 	fmt.Println("***************************************")
-	fmt.Println(req.ClusterName)
+	fmt.Println(req.ObjectKey.Cluster)
 	fmt.Println(ctx.Value("clusterName"))
 	fmt.Println("***************************************")
 	// log.Info(fmt.Sprintf("%+v\n\n%+v\n", ctx, req))
 
 	var chaospod api.ChaosPod
-	if err := r.Get(ctx, req.NamespacedName, &chaospod); err != nil {
+	if err := r.Get(ctx, req.ObjectKey, &chaospod); err != nil {
 		log.Error(err, "unable to get chaosctl")
 		return ctrl.Result{}, err
 	}
@@ -65,9 +64,9 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-cm",
-			Namespace:   "default",
-			ClusterName: req.ClusterName,
+			Name:      "test-cm",
+			Namespace: "default",
+			// ClusterName: req.ClusterName,
 		},
 		Data: map[string]string{
 			"test-key": "test-value",
@@ -87,9 +86,7 @@ func main() {
 	ctrl.SetLogger(zap.New())
 
 	cfg := ctrl.GetConfigOrDie()
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		NewCache: cache.MultiClusterMinCache(),
-	})
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -109,7 +106,6 @@ func main() {
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&api.ChaosPod{}).
-		// Cluster("*"). //:6443/apis/chaospods => :6443/clusters/*/apis/chaospods
 		Complete(&reconciler{
 			Client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
