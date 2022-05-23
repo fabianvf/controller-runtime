@@ -330,9 +330,6 @@ type ListOptions struct {
 	// non-namespaced objects, or to list across all namespaces.
 	Namespace string
 
-	// ClusterName refers to cluster from which to list objects
-	ClusterName string
-
 	// Limit specifies the maximum number of results to return from the server. The server may
 	// not support this field on all resource types, but if it does and more results remain it
 	// will set the continue field on the returned list object. This field is not supported if watch

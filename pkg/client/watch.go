@@ -34,9 +34,7 @@ func NewWithWatch(config *rest.Config, options Options) (WithWatch, error) {
 		return nil, err
 	}
 
-	var dynamicClient dynamic.Interface
-
-	dynamicClient, err = dynamic.NewForConfig(config)
+	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}

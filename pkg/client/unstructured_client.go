@@ -50,15 +50,9 @@ func (uc *unstructuredClient) Create(ctx context.Context, obj Object, opts ...Cr
 		return err
 	}
 
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	createOpts := &CreateOptions{}
 	createOpts.ApplyOptions(opts)
 	result := o.Post().
-		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Body(obj).
@@ -84,15 +78,9 @@ func (uc *unstructuredClient) Update(ctx context.Context, obj Object, opts ...Up
 		return err
 	}
 
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	updateOpts := UpdateOptions{}
 	updateOpts.ApplyOptions(opts)
 	result := o.Put().
-		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -119,14 +107,7 @@ func (uc *unstructuredClient) Delete(ctx context.Context, obj Object, opts ...De
 
 	deleteOpts := DeleteOptions{}
 	deleteOpts.ApplyOptions(opts)
-
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	return o.Delete().
-		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -149,14 +130,7 @@ func (uc *unstructuredClient) DeleteAllOf(ctx context.Context, obj Object, opts 
 
 	deleteAllOfOpts := DeleteAllOfOptions{}
 	deleteAllOfOpts.ApplyOptions(opts)
-
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	return o.Delete().
-		Cluster(clusterName).
 		NamespaceIfScoped(deleteAllOfOpts.ListOptions.Namespace, o.isNamespaced()).
 		Resource(o.resource()).
 		VersionedParams(deleteAllOfOpts.AsListOptions(), uc.paramCodec).
@@ -182,14 +156,8 @@ func (uc *unstructuredClient) Patch(ctx context.Context, obj Object, patch Patch
 		return err
 	}
 
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	patchOpts := &PatchOptions{}
 	return o.Patch(patch.Type()).
-		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
@@ -264,13 +232,7 @@ func (uc *unstructuredClient) UpdateStatus(ctx context.Context, obj Object, opts
 		return err
 	}
 
-	clusterName := o.GetClusterName()
-	if clusterName == "" {
-		clusterName, _ = ctx.Value("clusterName").(string)
-	}
-
 	return o.Put().
-		Cluster(clusterName).
 		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
 		Resource(o.resource()).
 		Name(o.GetName()).
