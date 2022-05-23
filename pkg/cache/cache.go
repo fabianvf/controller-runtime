@@ -19,6 +19,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -108,6 +109,8 @@ type Options struct {
 	// So that all informers will not send list requests simultaneously.
 	Resync *time.Duration
 
+	HTTPClient *http.Client
+
 	// Namespace restricts the cache's ListWatch to the desired namespace
 	// Default watches all namespaces
 	Namespace string
@@ -146,7 +149,7 @@ func New(config *rest.Config, opts Options) (Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, selectorsByGVK, disableDeepCopyByGVK)
+	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, selectorsByGVK, disableDeepCopyByGVK, opts.HTTPClient)
 	return &informerCache{InformersMap: im}, nil
 }
 
@@ -198,6 +201,15 @@ func defaultOpts(config *rest.Config, opts Options) (Options, error) {
 	// Default the resync period to 10 hours if unset
 	if opts.Resync == nil {
 		opts.Resync = &defaultResyncTime
+	}
+
+	if opts.HTTPClient == nil {
+		httpclient, err := rest.HTTPClientFor(config)
+		if err != nil {
+			log.WithName("setup").Error(err, "Failed to create HTTP client")
+			return opts, fmt.Errorf("Could not create HTTPClient from config")
+		}
+		opts.HTTPClient = httpclient
 	}
 	return opts, nil
 }
