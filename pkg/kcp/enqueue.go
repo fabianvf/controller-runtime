@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package handler
+package kcp
 
 import (
 	"github.com/kcp-dev/logicalcluster"
@@ -26,11 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var enqueueLog = logf.RuntimeLog.WithName("eventhandler").WithName("EnqueueRequestForObject")
+var enqueueLog = logf.RuntimeLog.WithName("eventhandler").WithName("EnqueueRequestForKCPObject")
 
 type empty struct{}
-
-var _ EventHandler = &EnqueueRequestForObject{}
 
 // EnqueueRequestForObject enqueues a Request containing the Name and Namespace of the object that is the source of the Event.
 // (e.g. the created / deleted / updated objects Name and Namespace).  handler.EnqueueRequestForObject is used by almost all
@@ -78,10 +76,10 @@ func (e *EnqueueRequestForObject) Generic(evt event.GenericEvent, q workqueue.Ra
 
 func request(obj client.Object) reconcile.Request {
 	return reconcile.Request{client.ObjectKey{
-		Cluster: logicalcluster.From(obj),
 		NamespacedName: types.NamespacedName{
-			Namespace: obj.GetNamespace(),
 			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
 		},
+		Cluster: logicalcluster.From(obj),
 	}}
 }

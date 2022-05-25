@@ -33,10 +33,12 @@ func NewWithWatch(config *rest.Config, options Options) (WithWatch, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
+
 	return &watchingClient{client: client, dynamic: dynamicClient}, nil
 }
 
