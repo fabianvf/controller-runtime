@@ -180,10 +180,10 @@ func (c *CacheReader) List(_ context.Context, out client.ObjectList, opts ...cli
 // String to allow keeping the key format easily in sync with
 // MetaNamespaceKeyFunc.
 func objectKeyToStoreKey(k client.ObjectKey) string {
-	if k.Namespace == "" {
+	if k.Namespace == "" && k.Cluster.String() == "" {
 		return k.Name
 	}
-	return k.Namespace + "/" + k.Name
+	return k.Cluster.String() + "/" + k.Namespace + "/" + k.Name
 }
 
 // requiresExactMatch checks if the given field selector is of the form `k=v` or `k==v`.

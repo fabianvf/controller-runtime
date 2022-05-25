@@ -37,7 +37,7 @@ type ObjectKey struct {
 
 // ObjectKeyFromObject returns the ObjectKey given a runtime.Object.
 func ObjectKeyFromObject(obj Object) ObjectKey {
-	return ObjectKey{NamespacedName: types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}}
+	return ObjectKey{NamespacedName: types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}, Cluster: logicalcluster.From(obj)}
 }
 
 // Patch is a patch that can be applied to a Kubernetes object.

@@ -19,7 +19,6 @@ package cache
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	toolscache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/cache/internal"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -109,7 +109,7 @@ type Options struct {
 	// So that all informers will not send list requests simultaneously.
 	Resync *time.Duration
 
-	HTTPClient *http.Client
+	KeyFunction cache.KeyFunc
 
 	// Namespace restricts the cache's ListWatch to the desired namespace
 	// Default watches all namespaces
@@ -149,7 +149,7 @@ func New(config *rest.Config, opts Options) (Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, selectorsByGVK, disableDeepCopyByGVK, opts.HTTPClient)
+	im := internal.NewInformersMap(config, opts.Scheme, opts.Mapper, *opts.Resync, opts.Namespace, selectorsByGVK, disableDeepCopyByGVK, opts.KeyFunction)
 	return &informerCache{InformersMap: im}, nil
 }
 
@@ -203,13 +203,8 @@ func defaultOpts(config *rest.Config, opts Options) (Options, error) {
 		opts.Resync = &defaultResyncTime
 	}
 
-	if opts.HTTPClient == nil {
-		httpclient, err := rest.HTTPClientFor(config)
-		if err != nil {
-			log.WithName("setup").Error(err, "Failed to create HTTP client")
-			return opts, fmt.Errorf("Could not create HTTPClient from config")
-		}
-		opts.HTTPClient = httpclient
+	if opts.KeyFunction == nil {
+		opts.KeyFunction = cache.MetaNamespaceKeyFunc
 	}
 	return opts, nil
 }

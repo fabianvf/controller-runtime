@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2022 The KCP Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,18 +22,21 @@ import (
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
 	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
+	"github.com/kcp-dev/logicalcluster"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	api "sigs.k8s.io/controller-runtime/examples/crd/pkg"
+
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -50,40 +53,16 @@ type reconciler struct {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx).WithValues("chaospod", req.ObjectKey)
-	log.V(1).Info("reconciling chaos pod")
+	log := log.FromContext(ctx).WithValues("cluster", req.ObjectKey.Cluster.String())
 
-	fmt.Println("***************************************")
-	fmt.Println(req.ObjectKey.Cluster)
-	fmt.Println(ctx.Value("clusterName"))
-	fmt.Println("***************************************")
-	// log.Info(fmt.Sprintf("%+v\n\n%+v\n", ctx, req))
+	ctx = kcpclient.WithCluster(ctx, req.ObjectKey.Cluster)
 
-	var chaospod api.ChaosPod
-	if err := r.Get(ctx, req.ObjectKey, &chaospod); err != nil {
-		log.Error(err, "unable to get chaosctl")
+	var configmap corev1.ConfigMap
+	if err := r.Get(ctx, req.ObjectKey, &configmap); err != nil {
+		log.Error(err, "unable to get configmap")
 		return ctrl.Result{}, err
 	}
-
-	cm := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-cm",
-			Namespace: "default",
-			// ClusterName: req.ClusterName,
-		},
-		Data: map[string]string{
-			"test-key": "test-value",
-		},
-	}
-	if err := r.Create(ctx, cm); err != nil {
-		log.Info("CM creation failed", err)
-		// log.Error(err, "this is fine")
-		return ctrl.Result{}, nil
-	}
+	log.Info("Retrieved configmap")
 
 	return ctrl.Result{}, nil
 }
@@ -93,6 +72,7 @@ func main() {
 	ctrl.SetLogger(zap.New())
 
 	cfg := ctrl.GetConfigOrDie()
+	fmt.Println(cfg.Host)
 	httpClient, err := rest.HTTPClientFor(cfg)
 	if err != nil {
 		setupLog.Error(err, "unable to build http client")
@@ -101,21 +81,23 @@ func main() {
 	clusterRoundTripper := kcpclient.NewClusterRoundTripper(httpClient.Transport)
 	httpClient.Transport = clusterRoundTripper
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		NewCache: cache.BuilderWithOptions(
-			cache.Options{
-				HTTPClient: httpClient,
-			})})
+		LeaderElection: false,
+		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+			c := rest.CopyConfig(config)
+			c.Host += "/clusters/*"
+			opts.KeyFunction = kcpcache.ClusterAwareKeyFunc
+			return cache.New(c, opts)
+		},
+		NewClient: func(cache cache.Cache, config *rest.Config, opts client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+			opts.HTTPClient = httpClient
+			return cluster.DefaultNewClient(cache, config, opts, uncachedObjects...)
+		},
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	// in a real controller, we'd create a new scheme for this
-	err = api.AddToScheme(mgr.GetScheme())
-	if err != nil {
-		setupLog.Error(err, "unable to add scheme")
-		os.Exit(1)
-	}
 	err = corev1.AddToScheme(mgr.GetScheme())
 	if err != nil {
 		setupLog.Error(err, "unable to add scheme")
@@ -131,13 +113,13 @@ func main() {
 		setupLog.Error(err, "unable to set up individual controller")
 		os.Exit(1)
 	}
-	if err := c.Watch(&source.Kind{Type: &api.ChaosPod{}}, &kcp.EnqueueRequestForObject{}); err != nil {
-		setupLog.Error(err, "unable to watch chaospods")
+	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &kcp.EnqueueRequestForObject{}); err != nil {
+		setupLog.Error(err, "unable to watch configmaps")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(kcpclient.WithCluster(ctrl.SetupSignalHandler(), logicalcluster.Wildcard)); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
